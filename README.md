@@ -116,6 +116,8 @@ Place prepared `train.csv`, `val.csv`, and `test.csv` files under a local `data/
 input,target
 ```
 
+The training configuration follows the final presentation setup: batch size **64**, validation batch size **16**, embedding dimension **128**, hidden dimension **256**, up to **30 epochs**, learning rate **0.001**, teacher forcing ratio **0.6**, early-stopping patience **5**, and weight decay **0.0001**.
+
 Then run:
 
 ```bash
@@ -134,13 +136,13 @@ Interactive inference:
 python src/infer.py
 ```
 
-> The original project scripts were developed in a local team-project environment. Paths may need minor adjustment depending on your directory structure.
+> The original project scripts were developed in a local project environment. Paths may need minor adjustment depending on your directory structure.
 
 ## Notes
 
-- This repository is a cleaned portfolio version of a **team project**.
-- The repository documents the overall model and experiment pipeline; it does not claim that every project component was implemented individually by the repository owner.
 - Large datasets and trained checkpoints are intentionally excluded from the public repository.
+- The repository contains a compact sample dataset for illustrating the expected input/target format.
+- Evaluation uses BLEU for character-level sequence comparison.
 
 ## Tech Stack
 
