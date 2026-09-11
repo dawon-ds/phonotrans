@@ -7,7 +7,7 @@ from torch.utils.data import Dataset
 class CharVocab:
     def __init__(self, texts, specials=None):
         if specials is None:
-            specials = ["<pad>", "<sos>", "<eos>"]
+            specials = ["<pad>", "<unk>", "<sos>", "<eos>"]
         counter = Counter(ch for text in texts if isinstance(text, str) for ch in text)
         self.itos = specials + sorted(counter)
         self.stoi = {s: i for i, s in enumerate(self.itos)}
@@ -15,9 +15,10 @@ class CharVocab:
     def encode(self, text):
         if not isinstance(text, str):
             text = ""
+        unk_idx = self.stoi["<unk>"]
         return (
             [self.stoi["<sos>"]]
-            + [self.stoi.get(c, 0) for c in text]
+            + [self.stoi.get(c, unk_idx) for c in text]
             + [self.stoi["<eos>"]]
         )
 
