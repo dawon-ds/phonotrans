@@ -38,7 +38,9 @@ The project combined a general Japanese corpus with dialogue-focused data.
 | Dialogue / conversational corpus | 41,736 sentences |
 | Combined scale | approximately 245K sentence pairs |
 
-For the final experiments, a fixed test set was separated first. The remaining training/validation data was augmented and split for controlled comparison between augmentation settings.
+Japanese sentences were converted into training pairs containing Hangul pronunciation and Korean meaning. For the dialogue corpus, the recovered project code extracts utterances from dialogue JSON and collects Papago's displayed pronunciation and Korean translation through Selenium.
+
+An original project utility also confirms an **80/10/10 train/validation/test split with random state 42**. In later augmentation experiments, a fixed test set was kept separate and augmentation was applied to the remaining train/validation data before re-splitting it for controlled comparisons.
 
 Because the full dataset is large and includes externally collected/translated material, this repository contains only a **small sample** rather than the complete training corpus.
 
@@ -82,7 +84,7 @@ This configuration produced recorded BLEU runs of **0.5276** and **0.5523**.
 
 The configuration used in the final presentation reported **BLEU 0.5276**. The highest recorded experimental run in the project log was approximately **0.56**.
 
-The repository now includes recovered preprocessing utilities from the original project for phonological-process noise, vowel noise, and train/validation splitting. These utilities document part of the augmentation pipeline used during development; the later combined x5 augmentation experiments are preserved as recorded experimental results rather than claimed as fully reproduced by the public preprocessing script.
+The repository includes recovered preprocessing utilities from the original project for phonological-process noise, vowel noise, dataset splitting, and train/validation augmentation. These utilities document the verified parts of the original data pipeline; the later combined x5 augmentation experiments are preserved as recorded experimental results rather than claimed as fully reproduced by the public preprocessing script.
 
 ## Repository Structure
 
@@ -93,8 +95,11 @@ phonotrans/
 ├── .gitignore
 ├── data/
 │   └── sample.csv
+├── data_collection/
+│   └── dialogue_papago.py
 ├── preprocessing/
 │   ├── pronunciation_converter.py
+│   ├── split_dataset.py
 │   ├── noise_generator.py
 │   └── augmentation.py
 ├── experiments/
@@ -111,6 +116,10 @@ phonotrans/
     └── utils.py
 ```
 
+`data_collection/dialogue_papago.py` is a cleaned version of the recovered dialogue-data collection script. It extracts utterances from the Japanese dialogue JSON format and records Papago pronunciation and Korean translation. The selectors reflect the web interface used during the original project and may need adjustment if the service UI changes.
+
+`preprocessing/split_dataset.py` preserves the recovered project's 80/10/10 split procedure with `random_state=42`, while removing machine-specific Windows paths.
+
 `preprocessing/pronunciation_converter.py` is an auxiliary preprocessing utility that converts Japanese text into a Hangul pronunciation representation through romanization.
 
 `preprocessing/noise_generator.py` contains the recovered Korean phonological-process and vowel-noise functions used by the project augmentation script. `preprocessing/augmentation.py` applies the two noise functions, merges original and augmented rows, shuffles the data, and performs the train/validation split after test data has already been excluded.
@@ -124,18 +133,31 @@ Input : 혼와 도코데 카에마스카
 Target: 책은 어디서 살 수 있나요?
 ```
 
+## Data Preparation
+
+To reproduce the recovered original 80/10/10 split from a prepared full dataset:
+
+```bash
+python preprocessing/split_dataset.py \
+  --input data/final_converted_input_target.csv \
+  --output-dir data
+```
+
+For the recovered 0.3 dual-noise preprocessing flow used after a fixed test set had already been excluded:
+
+```bash
+python preprocessing/augmentation.py \
+  --input data/dataset_except_test.csv \
+  --prob 0.3 \
+  --output-dir data
+```
+
 ## Training
 
 Place prepared `train.csv`, `val.csv`, and `test.csv` files under a local `data/` directory with the following columns:
 
 ```text
 input,target
-```
-
-For the recovered 0.3 dual-noise preprocessing flow, use a CSV that already excludes the fixed test set:
-
-```bash
-python preprocessing/augmentation.py --input data/dataset_except_test.csv --prob 0.3 --output-dir data
 ```
 
 The training configuration follows the final presentation setup: batch size **64**, validation batch size **16**, embedding dimension **128**, hidden dimension **256**, up to **30 epochs**, learning rate **0.001**, teacher forcing ratio **0.6**, early-stopping patience **5**, and weight decay **0.0001**.
@@ -158,14 +180,15 @@ Interactive inference:
 python src/infer.py
 ```
 
-> The original project scripts were developed in a local project environment. Paths may need minor adjustment depending on your directory structure.
+> The original project scripts were developed in a local project environment. Recovered scripts in this repository have been cleaned to remove machine-specific absolute paths.
 
 ## Notes
 
 - Large datasets and trained checkpoints are intentionally excluded from the public repository.
 - The repository contains a compact sample dataset for illustrating the expected input/target format.
 - Evaluation uses the mean of character-level sentence BLEU scores.
+- `faster_train.py` from the recovered project used validation-loss early stopping with a different experimental configuration, so it is not used as the canonical final-presentation training script.
 
 ## Tech Stack
 
-`Python` `PyTorch` `Pandas` `NLTK` `scikit-learn` `Seq2Seq` `GRU` `Attention` `NLP` `Data Augmentation`
+`Python` `PyTorch` `Pandas` `NLTK` `scikit-learn` `Selenium` `Seq2Seq` `GRU` `Attention` `NLP` `Data Augmentation`
