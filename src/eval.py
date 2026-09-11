@@ -10,6 +10,8 @@ from seq2seq import Attention, AttentionDecoder, Encoder, Seq2Seq
 from utils import PronunciationDataset
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+EMB_DIM = 128
+HID_DIM = 256
 MODEL_PATH = "runs/model_best.pt"
 SRC_VOCAB_PATH = "runs/src_vocab.pkl"
 TGT_VOCAB_PATH = "runs/tgt_vocab.pkl"
@@ -43,9 +45,9 @@ def main():
         test_dataset, batch_size=1, shuffle=False, collate_fn=collate_batch
     )
 
-    encoder = Encoder(len(src_vocab), 128, 256)
-    attention = Attention(256)
-    decoder = AttentionDecoder(len(tgt_vocab), 128, 256, attention)
+    encoder = Encoder(len(src_vocab), EMB_DIM, HID_DIM)
+    attention = Attention(HID_DIM)
+    decoder = AttentionDecoder(len(tgt_vocab), EMB_DIM, HID_DIM, attention)
     model = Seq2Seq(encoder, decoder, DEVICE).to(DEVICE)
     model.load_state_dict(torch.load(MODEL_PATH, map_location=DEVICE))
     model.eval()
