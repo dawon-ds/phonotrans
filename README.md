@@ -40,7 +40,7 @@ The project combined a general Japanese corpus with dialogue-focused data.
 
 Japanese sentences were converted into training pairs containing Hangul pronunciation and Korean meaning. For the dialogue corpus, the recovered project code extracts utterances from dialogue JSON and collects Papago's displayed pronunciation and Korean translation through Selenium.
 
-An original project utility also confirms an **80/10/10 train/validation/test split with random state 42**. In later augmentation experiments, a fixed test set was kept separate and augmentation was applied to the remaining train/validation data before re-splitting it for controlled comparisons.
+Recovered project scripts show two related split workflows used during development: an earlier **80/10/10 train/validation/test split with random state 42**, and a later augmentation workflow that first fixed **10% as test data**, saved the remaining 90% as `dataset_except_test.csv`, then augmented and re-split that train/validation pool.
 
 Because the full dataset is large and includes externally collected/translated material, this repository contains only a **small sample** rather than the complete training corpus.
 
@@ -109,12 +109,26 @@ phonotrans/
 │       ├── jp_to_ko_mbart.py
 │       └── pipeline_demo.py
 └── src/
+    ├── config.py
+    ├── data.py
+    ├── model_factory.py
     ├── seq2seq.py
+    ├── utils.py
     ├── train.py
     ├── eval.py
-    ├── infer.py
-    └── utils.py
+    └── infer.py
 ```
+
+### Code Organization
+
+- `data_collection/` contains recovered data acquisition utilities.
+- `preprocessing/` contains dataset splitting, pronunciation conversion, and verified augmentation utilities.
+- `experiments/initial_pipeline/` preserves the earlier staged translation approach for project history.
+- `src/config.py` centralizes model, training, path, and runtime settings shared by training, evaluation, and inference.
+- `src/data.py` centralizes CSV pair loading and padded batch collation.
+- `src/model_factory.py` provides one shared constructor for the Seq2Seq + Attention architecture so `train.py`, `eval.py`, and `infer.py` use the same model definition.
+- `src/seq2seq.py` contains the Encoder, Attention, AttentionDecoder, and Seq2Seq modules.
+- `src/utils.py` contains the character vocabulary and PyTorch dataset implementation.
 
 `data_collection/dialogue_papago.py` is a cleaned version of the recovered dialogue-data collection script. It extracts utterances from the Japanese dialogue JSON format and records Papago pronunciation and Korean translation. The selectors reflect the web interface used during the original project and may need adjustment if the service UI changes.
 
@@ -160,9 +174,9 @@ Place prepared `train.csv`, `val.csv`, and `test.csv` files under a local `data/
 input,target
 ```
 
-The training configuration follows the final presentation setup: batch size **64**, validation batch size **16**, embedding dimension **128**, hidden dimension **256**, up to **30 epochs**, learning rate **0.001**, teacher forcing ratio **0.6**, early-stopping patience **5**, and weight decay **0.0001**.
+The canonical configuration is defined in `src/config.py` and follows the final presentation setup: batch size **64**, validation batch size **16**, embedding dimension **128**, hidden dimension **256**, up to **30 epochs**, learning rate **0.001**, teacher forcing ratio **0.6**, early-stopping patience **5**, and weight decay **0.0001**.
 
-Then run:
+Training:
 
 ```bash
 python src/train.py
@@ -187,6 +201,7 @@ python src/infer.py
 - Large datasets and trained checkpoints are intentionally excluded from the public repository.
 - The repository contains a compact sample dataset for illustrating the expected input/target format.
 - Evaluation uses the mean of character-level sentence BLEU scores.
+- The verified recovered public augmentation code reproduces the 0.3 dual-noise flow, but not the later full x5 augmentation recipe.
 - `faster_train.py` from the recovered project used validation-loss early stopping with a different experimental configuration, so it is not used as the canonical final-presentation training script.
 
 ## Tech Stack
