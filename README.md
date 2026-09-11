@@ -59,7 +59,7 @@ The final model is a character-level Seq2Seq architecture:
    - GRU decoder
    - Linear output layer
 
-The implementation uses teacher forcing during training and greedy decoding for evaluation/inference.
+The implementation uses teacher forcing during training, greedy token selection during validation/evaluation, and autoregressive greedy decoding during interactive inference.
 
 ## Data Augmentation Experiments
 
@@ -82,6 +82,8 @@ This configuration produced recorded BLEU runs of **0.5276** and **0.5523**.
 
 The configuration used in the final presentation reported **BLEU 0.5276**. The highest recorded experimental run in the project log was approximately **0.56**.
 
+The augmentation experiments were conducted during the original project; the public repository focuses on the final Seq2Seq training, evaluation, and inference pipeline.
+
 ## Repository Structure
 
 ```text
@@ -100,6 +102,8 @@ phonotrans/
     ├── infer.py
     └── utils.py
 ```
+
+`preprocessing/pronunciation_converter.py` is an auxiliary preprocessing utility that converts Japanese text into a Hangul pronunciation representation through romanization.
 
 ## Example
 
@@ -142,7 +146,7 @@ python src/infer.py
 
 - Large datasets and trained checkpoints are intentionally excluded from the public repository.
 - The repository contains a compact sample dataset for illustrating the expected input/target format.
-- Evaluation uses BLEU for character-level sequence comparison.
+- Evaluation uses the mean of character-level sentence BLEU scores.
 
 ## Tech Stack
 
