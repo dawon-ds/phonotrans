@@ -82,7 +82,7 @@ This configuration produced recorded BLEU runs of **0.5276** and **0.5523**.
 
 The configuration used in the final presentation reported **BLEU 0.5276**. The highest recorded experimental run in the project log was approximately **0.56**.
 
-The augmentation experiments were conducted during the original project; the public repository focuses on the final Seq2Seq training, evaluation, and inference pipeline.
+The repository now includes recovered preprocessing utilities from the original project for phonological-process noise, vowel noise, and train/validation splitting. These utilities document part of the augmentation pipeline used during development; the later combined x5 augmentation experiments are preserved as recorded experimental results rather than claimed as fully reproduced by the public preprocessing script.
 
 ## Repository Structure
 
@@ -94,7 +94,9 @@ phonotrans/
 ├── data/
 │   └── sample.csv
 ├── preprocessing/
-│   └── pronunciation_converter.py
+│   ├── pronunciation_converter.py
+│   ├── noise_generator.py
+│   └── augmentation.py
 ├── experiments/
 │   └── initial_pipeline/
 │       ├── hangul_to_romanization.py
@@ -111,6 +113,8 @@ phonotrans/
 
 `preprocessing/pronunciation_converter.py` is an auxiliary preprocessing utility that converts Japanese text into a Hangul pronunciation representation through romanization.
 
+`preprocessing/noise_generator.py` contains the recovered Korean phonological-process and vowel-noise functions used by the project augmentation script. `preprocessing/augmentation.py` applies the two noise functions, merges original and augmented rows, shuffles the data, and performs the train/validation split after test data has already been excluded.
+
 `experiments/initial_pipeline/` preserves the earlier multi-stage approach used during development: Hangul pronunciation → romanization → Japanese representation → Korean translation. It is included to document the transition from the error-prone staged pipeline to the final direct Seq2Seq architecture.
 
 ## Example
@@ -126,6 +130,12 @@ Place prepared `train.csv`, `val.csv`, and `test.csv` files under a local `data/
 
 ```text
 input,target
+```
+
+For the recovered 0.3 dual-noise preprocessing flow, use a CSV that already excludes the fixed test set:
+
+```bash
+python preprocessing/augmentation.py --input data/dataset_except_test.csv --prob 0.3 --output-dir data
 ```
 
 The training configuration follows the final presentation setup: batch size **64**, validation batch size **16**, embedding dimension **128**, hidden dimension **256**, up to **30 epochs**, learning rate **0.001**, teacher forcing ratio **0.6**, early-stopping patience **5**, and weight decay **0.0001**.
@@ -158,4 +168,4 @@ python src/infer.py
 
 ## Tech Stack
 
-`Python` `PyTorch` `Pandas` `NLTK` `Seq2Seq` `GRU` `Attention` `NLP` `Data Augmentation`
+`Python` `PyTorch` `Pandas` `NLTK` `scikit-learn` `Seq2Seq` `GRU` `Attention` `NLP` `Data Augmentation`
