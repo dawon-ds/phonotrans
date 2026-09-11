@@ -8,3 +8,4 @@ transformers
 g2pk
 hangul-romanize
 scikit-learn
+selenium
