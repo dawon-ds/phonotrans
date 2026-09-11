@@ -4,3 +4,6 @@ nltk
 tqdm
 tensorboard
 pykakasi
+transformers
+g2pk
+hangul-romanize
