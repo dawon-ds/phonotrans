@@ -5,6 +5,8 @@ import torch
 from seq2seq import Attention, AttentionDecoder, Encoder, Seq2Seq
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+EMB_DIM = 128
+HID_DIM = 256
 MODEL_PATH = "runs/model_best.pt"
 SRC_VOCAB_PATH = "runs/src_vocab.pkl"
 TGT_VOCAB_PATH = "runs/tgt_vocab.pkl"
@@ -16,9 +18,9 @@ def load_model():
     with open(TGT_VOCAB_PATH, "rb") as f:
         tgt_vocab = pickle.load(f)
 
-    encoder = Encoder(len(src_vocab), 128, 256)
-    attention = Attention(256)
-    decoder = AttentionDecoder(len(tgt_vocab), 128, 256, attention)
+    encoder = Encoder(len(src_vocab), EMB_DIM, HID_DIM)
+    attention = Attention(HID_DIM)
+    decoder = AttentionDecoder(len(tgt_vocab), EMB_DIM, HID_DIM, attention)
     model = Seq2Seq(encoder, decoder, DEVICE).to(DEVICE)
     model.load_state_dict(torch.load(MODEL_PATH, map_location=DEVICE))
     model.eval()
@@ -26,9 +28,10 @@ def load_model():
 
 
 def infer(input_text, model, src_vocab, tgt_vocab, max_len=100):
+    unk_idx = src_vocab.stoi["<unk>"]
     tokens = (
         [src_vocab.stoi["<sos>"]]
-        + [src_vocab.stoi.get(ch, 0) for ch in input_text]
+        + [src_vocab.stoi.get(ch, unk_idx) for ch in input_text]
         + [src_vocab.stoi["<eos>"]]
     )
     src_tensor = torch.tensor(tokens).unsqueeze(1).to(DEVICE)
