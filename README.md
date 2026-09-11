@@ -26,11 +26,11 @@ The initial approach used a multi-stage pipeline:
 
 `Hangul pronunciation → Romanization → Japanese text → Korean translation`
 
-![Original system architecture](Original%20Architecture.png)
+![Original system architecture](docs/images/original_architecture.png)
 
 This structure was vulnerable to error propagation: mistakes produced by one stage became input errors for the next stage. The project therefore moved to a direct end-to-end architecture that predicts Korean meaning from Hangul pronunciation.
 
-![Redesigned system architecture](new_architecture.png)
+![Redesigned system architecture](docs/images/new_architecture.png)
 
 ## Dataset
 
@@ -84,7 +84,7 @@ To address overfitting, later experiments combined:
 - random Hangul substitution: **0.2**
 - approximately **5× augmentation**
 
-![Final augmentation configuration](final_model_data.png)
+![Final augmentation configuration](docs/images/final_model_data.png)
 
 This configuration produced recorded BLEU runs of **0.5276** and **0.5523**.
 
@@ -96,7 +96,7 @@ The repository includes recovered preprocessing utilities from the original proj
 
 The final presentation model reported **BLEU 0.5276**. In qualitative inference tests, the model correctly handled the original pronunciation and could preserve the intended meaning for some noisy pronunciation variants, while stronger distortions could still produce unrelated outputs.
 
-![Final model inference result](final_model_result.png)
+![Final model inference result](docs/images/final_model_result.png)
 
 ## Repository Structure
 
@@ -105,10 +105,12 @@ phonotrans/
 ├── README.md
 ├── requirements.txt
 ├── .gitignore
-├── Original Architecture.png
-├── new_architecture.png
-├── final_model_data.png
-├── final_model_result.png
+├── docs/
+│   └── images/
+│       ├── original_architecture.png
+│       ├── new_architecture.png
+│       ├── final_model_data.png
+│       └── final_model_result.png
 ├── data/
 │   └── sample.csv
 ├── data_collection/
