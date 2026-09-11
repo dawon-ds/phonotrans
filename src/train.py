@@ -13,13 +13,15 @@ from seq2seq import Attention, AttentionDecoder, Encoder, Seq2Seq
 from utils import CharVocab, PronunciationDataset
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-BATCH_SIZE = 32
+BATCH_SIZE = 64
+VAL_BATCH_SIZE = 16
 EMB_DIM = 128
 HID_DIM = 256
-EPOCHS = 100
+EPOCHS = 30
 LEARNING_RATE = 0.001
 TEACHER_FORCING_RATIO = 0.6
-PATIENCE = 15
+PATIENCE = 5
+WEIGHT_DECAY = 0.0001
 MODEL_SAVE_PATH = "runs/model_best.pt"
 TENSORBOARD_LOGDIR = "runs/seq2seq_train"
 
@@ -84,7 +86,7 @@ def main():
     )
     val_loader = DataLoader(
         val_dataset,
-        batch_size=1,
+        batch_size=VAL_BATCH_SIZE,
         shuffle=False,
         collate_fn=collate_batch,
     )
@@ -94,7 +96,11 @@ def main():
     decoder = AttentionDecoder(len(tgt_vocab), EMB_DIM, HID_DIM, attention)
     model = Seq2Seq(encoder, decoder, DEVICE).to(DEVICE)
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
+    optimizer = torch.optim.Adam(
+        model.parameters(),
+        lr=LEARNING_RATE,
+        weight_decay=WEIGHT_DECAY,
+    )
     criterion = nn.CrossEntropyLoss(ignore_index=0)
     early_stopper = EarlyStopping(patience=PATIENCE)
     smoother = SmoothingFunction()
@@ -117,20 +123,26 @@ def main():
         writer.add_scalar("Loss/train", avg_loss, epoch + 1)
 
         model.eval()
-        total_bleu = 0
+        total_bleu = 0.0
+        total_samples = 0
         with torch.no_grad():
             for src, tgt in tqdm(val_loader, desc="Validation"):
                 output = model(src, tgt, teacher_forcing_ratio=0.0)
                 pred_tokens = output.argmax(-1)
-                pred_seq = tgt_vocab.decode(pred_tokens[:, 0].cpu().numpy())
-                tgt_seq = tgt_vocab.decode(tgt[:, 0].cpu().numpy())
-                total_bleu += sentence_bleu(
-                    [list(tgt_seq)],
-                    list(pred_seq),
-                    smoothing_function=smoother.method1,
-                )
 
-        avg_bleu = total_bleu / len(val_loader)
+                for batch_idx in range(tgt.size(1)):
+                    pred_seq = tgt_vocab.decode(
+                        pred_tokens[:, batch_idx].cpu().numpy()
+                    )
+                    tgt_seq = tgt_vocab.decode(tgt[:, batch_idx].cpu().numpy())
+                    total_bleu += sentence_bleu(
+                        [list(tgt_seq)],
+                        list(pred_seq),
+                        smoothing_function=smoother.method1,
+                    )
+                    total_samples += 1
+
+        avg_bleu = total_bleu / total_samples
         writer.add_scalar("BLEU/val", avg_bleu, epoch + 1)
         print(f"Epoch {epoch + 1}: loss={avg_loss:.4f}, val BLEU={avg_bleu:.4f}")
 
