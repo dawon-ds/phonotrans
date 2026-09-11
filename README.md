@@ -2,7 +2,7 @@
 
 **Japanese Pronunciation-based Translation with Seq2Seq + Attention**
 
-PhonoTrans is a team project that translates **Japanese pronunciation written in Hangul directly into Korean meaning**. The project was motivated by a practical input problem: a user may understand spoken Japanese but still be unable to type the original Japanese script.
+PhonoTrans is a Japanese translation system designed for users unfamiliar with Japanese. Users can type Japanese speech phonetically in Hangul as they hear it, and the system interprets the intended Japanese expression and directly provides its Korean meaning.
 
 Instead of requiring Japanese text as an intermediate representation, the final system learns an end-to-end mapping:
 
@@ -19,6 +19,8 @@ Instead of requiring Japanese text as an intermediate representation, the final 
 - **Evaluation:** BLEU
 
 ## Motivation
+
+The project was motivated by a practical problem: users who do not know Japanese may hear a Japanese expression but be unable to identify or type the original Japanese text. PhonoTrans allows them to enter the pronunciation as they hear it using Hangul and receive the corresponding Korean meaning.
 
 The initial approach used a multi-stage pipeline:
 
