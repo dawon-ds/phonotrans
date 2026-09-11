@@ -95,6 +95,12 @@ phonotrans/
 │   └── sample.csv
 ├── preprocessing/
 │   └── pronunciation_converter.py
+├── experiments/
+│   └── initial_pipeline/
+│       ├── hangul_to_romanization.py
+│       ├── romaji_to_hiragana.py
+│       ├── jp_to_ko_mbart.py
+│       └── pipeline_demo.py
 └── src/
     ├── seq2seq.py
     ├── train.py
@@ -104,6 +110,8 @@ phonotrans/
 ```
 
 `preprocessing/pronunciation_converter.py` is an auxiliary preprocessing utility that converts Japanese text into a Hangul pronunciation representation through romanization.
+
+`experiments/initial_pipeline/` preserves the earlier multi-stage approach used during development: Hangul pronunciation → romanization → Japanese representation → Korean translation. It is included to document the transition from the error-prone staged pipeline to the final direct Seq2Seq architecture.
 
 ## Example
 
