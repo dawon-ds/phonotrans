@@ -1,7 +1,6 @@
 import os
 import pickle
 
-import pandas as pd
 import torch
 from nltk.translate.bleu_score import SmoothingFunction, sentence_bleu
 from torch import nn
@@ -9,21 +8,27 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 
-from seq2seq import Attention, AttentionDecoder, Encoder, Seq2Seq
+from config import (
+    BATCH_SIZE,
+    DEVICE,
+    EMB_DIM,
+    EPOCHS,
+    HID_DIM,
+    LEARNING_RATE,
+    MODEL_PATH,
+    PATIENCE,
+    SRC_VOCAB_PATH,
+    TEACHER_FORCING_RATIO,
+    TENSORBOARD_LOGDIR,
+    TGT_VOCAB_PATH,
+    TRAIN_PATH,
+    VAL_BATCH_SIZE,
+    VAL_PATH,
+    WEIGHT_DECAY,
+)
+from data import load_pairs, make_collate_fn
+from model_factory import build_model
 from utils import CharVocab, PronunciationDataset
-
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-BATCH_SIZE = 64
-VAL_BATCH_SIZE = 16
-EMB_DIM = 128
-HID_DIM = 256
-EPOCHS = 30
-LEARNING_RATE = 0.001
-TEACHER_FORCING_RATIO = 0.6
-PATIENCE = 5
-WEIGHT_DECAY = 0.0001
-MODEL_SAVE_PATH = "runs/model_best.pt"
-TENSORBOARD_LOGDIR = "runs/seq2seq_train"
 
 
 class EarlyStopping:
@@ -44,57 +49,37 @@ class EarlyStopping:
         return False
 
 
-def load_pairs(path):
-    df = pd.read_csv(path, encoding="utf-8")
-    df.columns = df.columns.str.strip()
-    df.dropna(subset=["input", "target"], inplace=True)
-    df = df[
-        df["input"].apply(lambda x: isinstance(x, str))
-        & df["target"].apply(lambda x: isinstance(x, str))
-    ]
-    return list(zip(df["input"], df["target"]))
-
-
-def collate_batch(batch):
-    src_batch, tgt_batch = zip(*batch)
-    src_pad = nn.utils.rnn.pad_sequence(src_batch, padding_value=0)
-    tgt_pad = nn.utils.rnn.pad_sequence(tgt_batch, padding_value=0)
-    return src_pad.to(DEVICE), tgt_pad.to(DEVICE)
-
-
 def main():
-    train_pairs = load_pairs("data/train.csv")
-    val_pairs = load_pairs("data/val.csv")
+    train_pairs = load_pairs(TRAIN_PATH)
+    val_pairs = load_pairs(VAL_PATH)
 
     src_vocab = CharVocab([src for src, _ in train_pairs])
     tgt_vocab = CharVocab([tgt for _, tgt in train_pairs])
 
     os.makedirs("runs", exist_ok=True)
-    with open("runs/src_vocab.pkl", "wb") as f:
+    with open(SRC_VOCAB_PATH, "wb") as f:
         pickle.dump(src_vocab, f)
-    with open("runs/tgt_vocab.pkl", "wb") as f:
+    with open(TGT_VOCAB_PATH, "wb") as f:
         pickle.dump(tgt_vocab, f)
 
     train_dataset = PronunciationDataset(train_pairs, src_vocab, tgt_vocab)
     val_dataset = PronunciationDataset(val_pairs, src_vocab, tgt_vocab)
+    collate_fn = make_collate_fn(DEVICE)
 
     train_loader = DataLoader(
         train_dataset,
         batch_size=BATCH_SIZE,
         shuffle=True,
-        collate_fn=collate_batch,
+        collate_fn=collate_fn,
     )
     val_loader = DataLoader(
         val_dataset,
         batch_size=VAL_BATCH_SIZE,
         shuffle=False,
-        collate_fn=collate_batch,
+        collate_fn=collate_fn,
     )
 
-    encoder = Encoder(len(src_vocab), EMB_DIM, HID_DIM)
-    attention = Attention(HID_DIM)
-    decoder = AttentionDecoder(len(tgt_vocab), EMB_DIM, HID_DIM, attention)
-    model = Seq2Seq(encoder, decoder, DEVICE).to(DEVICE)
+    model = build_model(len(src_vocab), len(tgt_vocab), EMB_DIM, HID_DIM, DEVICE)
 
     optimizer = torch.optim.Adam(
         model.parameters(),
@@ -147,7 +132,7 @@ def main():
         print(f"Epoch {epoch + 1}: loss={avg_loss:.4f}, val BLEU={avg_bleu:.4f}")
 
         if early_stopper(avg_bleu):
-            torch.save(model.state_dict(), MODEL_SAVE_PATH)
+            torch.save(model.state_dict(), MODEL_PATH)
         if early_stopper.early_stop:
             print(f"Early stopping. Best BLEU: {early_stopper.best_score:.4f}")
             break
