@@ -2,14 +2,15 @@ import pickle
 
 import torch
 
-from seq2seq import Attention, AttentionDecoder, Encoder, Seq2Seq
-
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-EMB_DIM = 128
-HID_DIM = 256
-MODEL_PATH = "runs/model_best.pt"
-SRC_VOCAB_PATH = "runs/src_vocab.pkl"
-TGT_VOCAB_PATH = "runs/tgt_vocab.pkl"
+from config import (
+    DEVICE,
+    EMB_DIM,
+    HID_DIM,
+    MODEL_PATH,
+    SRC_VOCAB_PATH,
+    TGT_VOCAB_PATH,
+)
+from model_factory import build_model
 
 
 def load_model():
@@ -18,10 +19,7 @@ def load_model():
     with open(TGT_VOCAB_PATH, "rb") as f:
         tgt_vocab = pickle.load(f)
 
-    encoder = Encoder(len(src_vocab), EMB_DIM, HID_DIM)
-    attention = Attention(HID_DIM)
-    decoder = AttentionDecoder(len(tgt_vocab), EMB_DIM, HID_DIM, attention)
-    model = Seq2Seq(encoder, decoder, DEVICE).to(DEVICE)
+    model = build_model(len(src_vocab), len(tgt_vocab), EMB_DIM, HID_DIM, DEVICE)
     model.load_state_dict(torch.load(MODEL_PATH, map_location=DEVICE))
     model.eval()
     return model, src_vocab, tgt_vocab
