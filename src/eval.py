@@ -1,28 +1,22 @@
 import pickle
 
-import pandas as pd
 import torch
 from nltk.translate.bleu_score import SmoothingFunction, sentence_bleu
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from seq2seq import Attention, AttentionDecoder, Encoder, Seq2Seq
+from config import (
+    DEVICE,
+    EMB_DIM,
+    HID_DIM,
+    MODEL_PATH,
+    SRC_VOCAB_PATH,
+    TEST_PATH,
+    TGT_VOCAB_PATH,
+)
+from data import load_pairs, make_collate_fn
+from model_factory import build_model
 from utils import PronunciationDataset
-
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-EMB_DIM = 128
-HID_DIM = 256
-MODEL_PATH = "runs/model_best.pt"
-SRC_VOCAB_PATH = "runs/src_vocab.pkl"
-TGT_VOCAB_PATH = "runs/tgt_vocab.pkl"
-TEST_PATH = "data/test.csv"
-
-
-def collate_batch(batch):
-    src_batch, tgt_batch = zip(*batch)
-    src_pad = torch.nn.utils.rnn.pad_sequence(src_batch, padding_value=0)
-    tgt_pad = torch.nn.utils.rnn.pad_sequence(tgt_batch, padding_value=0)
-    return src_pad.to(DEVICE), tgt_pad.to(DEVICE)
 
 
 def main():
@@ -31,29 +25,21 @@ def main():
     with open(TGT_VOCAB_PATH, "rb") as f:
         tgt_vocab = pickle.load(f)
 
-    test_df = pd.read_csv(TEST_PATH, encoding="utf-8")
-    test_df.columns = test_df.columns.str.strip()
-    test_df.dropna(subset=["input", "target"], inplace=True)
-    test_df = test_df[
-        test_df["input"].apply(lambda x: isinstance(x, str))
-        & test_df["target"].apply(lambda x: isinstance(x, str))
-    ]
-    test_pairs = list(zip(test_df["input"], test_df["target"]))
-
+    test_pairs = load_pairs(TEST_PATH)
     test_dataset = PronunciationDataset(test_pairs, src_vocab, tgt_vocab)
     test_loader = DataLoader(
-        test_dataset, batch_size=1, shuffle=False, collate_fn=collate_batch
+        test_dataset,
+        batch_size=1,
+        shuffle=False,
+        collate_fn=make_collate_fn(DEVICE),
     )
 
-    encoder = Encoder(len(src_vocab), EMB_DIM, HID_DIM)
-    attention = Attention(HID_DIM)
-    decoder = AttentionDecoder(len(tgt_vocab), EMB_DIM, HID_DIM, attention)
-    model = Seq2Seq(encoder, decoder, DEVICE).to(DEVICE)
+    model = build_model(len(src_vocab), len(tgt_vocab), EMB_DIM, HID_DIM, DEVICE)
     model.load_state_dict(torch.load(MODEL_PATH, map_location=DEVICE))
     model.eval()
 
     smoother = SmoothingFunction()
-    total_bleu = 0
+    total_bleu = 0.0
     samples = []
 
     with torch.no_grad():
