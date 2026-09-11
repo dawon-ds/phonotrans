@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+.idea/
+.vscode/
+runs/
+*.pt
+*.pth
+*.pkl
+*.tfevents.*
+data/*.csv
+!data/sample.csv
