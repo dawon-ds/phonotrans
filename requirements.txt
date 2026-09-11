@@ -4,4 +4,3 @@ nltk
 tqdm
 tensorboard
 pykakasi
-scikit-learn
