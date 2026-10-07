@@ -2,7 +2,7 @@
 
 **Character-level Seq2Seq with GRU and Attention · 2025**
 
-[Portfolio](https://app.notion.com/p/14d68564df5a82179efc017502741a9b)
+[Portfolio](https://incredible-march-0ef.notion.site/14d68564df5a82179efc017502741a9b)
 
 PhonoTrans is a Japanese translation system for users unfamiliar with Japanese. Users type Japanese speech phonetically in Hangul, and the model directly predicts the corresponding Korean meaning.
 
