@@ -20,7 +20,9 @@ PhonoTrans is a Japanese translation system for users unfamiliar with Japanese. 
 - **Framework:** PyTorch
 - **Evaluation:** BLEU
 
-## Motivation
+## Data
+
+### Motivation
 
 Users who do not know Japanese may hear an expression but be unable to identify or type the original Japanese text. PhonoTrans was designed to accept the pronunciation as heard in Hangul and return the corresponding Korean meaning.
 
@@ -33,8 +35,6 @@ The initial approach used a multi-stage pipeline:
 Because errors from one stage propagated into the next, the system was redesigned as a direct end-to-end mapping from Hangul pronunciation to Korean meaning.
 
 ![Redesigned system architecture](docs/images/new_architecture.png)
-
-## Dataset
 
 The project combined a general Japanese corpus with dialogue-focused data.
 
@@ -50,17 +50,26 @@ Recovered scripts show two split workflows used during development: an earlier *
 
 Because the full dataset is large and includes externally collected and translated material, this repository contains only a small sample rather than the complete training corpus.
 
-## Model Architecture
+### Data Preparation
 
-The final model is a character-level Seq2Seq architecture with three main components:
+To reproduce the recovered original 80/10/10 split:
 
-1. **Encoder** — character embedding + GRU
-2. **Attention** — computes attention weights over encoder outputs at each decoding step
-3. **Decoder** — character embedding + attention context + GRU + linear output layer
+```bash
+python preprocessing/split_dataset.py \
+  --input data/final_converted_input_target.csv \
+  --output-dir data
+```
 
-Training uses teacher forcing, validation/evaluation uses greedy token selection, and interactive inference uses autoregressive greedy decoding.
+For the recovered 0.3 dual-noise preprocessing flow after the fixed test set has already been excluded:
 
-## Data Augmentation Experiments
+```bash
+python preprocessing/augmentation.py \
+  --input data/dataset_except_test.csv \
+  --prob 0.3 \
+  --output-dir data
+```
+
+### Data Augmentation Experiments
 
 The project compared pronunciation-noise strengths **0.3, 0.5, 0.7, and 1.0**, as well as random Hangul substitution and random drop at **0.2**.
 
@@ -72,7 +81,19 @@ Some experimental runs reached BLEU around **0.56**; the final presentation repo
 
 The public preprocessing code contains phonological-process noise, vowel noise, dataset splitting, and the recovered **0.3 dual-noise** workflow. The complete later fivefold augmentation recipe remains documented in project records and cannot be reproduced from these utilities alone.
 
-## Final Result
+## Approach
+
+### Model Architecture
+
+The final model is a character-level Seq2Seq architecture with three main components:
+
+1. **Encoder** — character embedding + GRU
+2. **Attention** — computes attention weights over encoder outputs at each decoding step
+3. **Decoder** — character embedding + attention context + GRU + linear output layer
+
+Training uses teacher forcing, validation/evaluation uses greedy token selection, and interactive inference uses autoregressive greedy decoding.
+
+## Results
 
 The final presentation model reported **BLEU 0.5276**. Qualitative inference examples showed correct output for the original pronunciation and partial tolerance to some pronunciation variations, while stronger distortions could still lead to unrelated predictions.
 
@@ -128,14 +149,14 @@ phonotrans/
 - `src/seq2seq.py` — Encoder, Attention, AttentionDecoder, and Seq2Seq modules
 - `src/utils.py` — character vocabulary and PyTorch dataset implementation
 
-## Example
+## Usage
+
+### Example
 
 ```text
 Input : 혼와 도코데 카에마스카
 Target: 책은 어디서 살 수 있나요?
 ```
-
-## Installation
 
 Run the commands from the repository root in a Python environment with a compatible PyTorch installation.
 
@@ -145,26 +166,7 @@ pip install -r requirements.txt
 
 The small `data/sample.csv` file illustrates the input format. It does not replace the full training corpus or the prepared train/validation/test files.
 
-## Data Preparation
-
-To reproduce the recovered original 80/10/10 split:
-
-```bash
-python preprocessing/split_dataset.py \
-  --input data/final_converted_input_target.csv \
-  --output-dir data
-```
-
-For the recovered 0.3 dual-noise preprocessing flow after the fixed test set has already been excluded:
-
-```bash
-python preprocessing/augmentation.py \
-  --input data/dataset_except_test.csv \
-  --prob 0.3 \
-  --output-dir data
-```
-
-## Training
+### Training
 
 Place prepared `train.csv`, `val.csv`, and `test.csv` files under `data/` with the following columns:
 
@@ -194,7 +196,13 @@ Interactive inference:
 python src/infer.py
 ```
 
-## Evaluation & Limitations
+### Data & Artifacts
+
+- Large datasets and trained checkpoints are excluded from the public repository.
+- The repository includes a compact sample dataset showing the expected input/target format.
+- The verified public augmentation code reproduces the recovered 0.3 dual-noise flow, but not the later full x5 augmentation recipe.
+
+## Limitations
 
 - Evaluation reports the **mean of character-level sentence BLEU scores**, using NLTK smoothing method 1. It is not a corpus-level word-tokenized BLEU score.
 - The evaluation script decodes for the reference target's length, whereas interactive inference stops at EOS or 100 generated characters. Their decoding conditions differ.
@@ -205,12 +213,6 @@ python src/infer.py
 ## Review
 
 The main development was identifying error propagation in the initial multi-stage pipeline and reframing translation as a direct Hangul-pronunciation-to-Korean Seq2Seq task. Pronunciation augmentation experiments then explored robustness to imperfect transcriptions.
-
-## Notes
-
-- Large datasets and trained checkpoints are excluded from the public repository.
-- The repository includes a compact sample dataset showing the expected input/target format.
-- The verified public augmentation code reproduces the recovered 0.3 dual-noise flow, but not the later full x5 augmentation recipe.
 
 ## Tech Stack
 
