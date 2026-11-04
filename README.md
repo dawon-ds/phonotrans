@@ -184,3 +184,10 @@ This project demonstrates a redesign from a multi-stage translation pipeline to 
 ## Tech Stack
 
 `Python` `PyTorch` `Pandas` `NLTK` `scikit-learn` `Selenium` `Seq2Seq` `GRU` `Attention` `NLP` `Data Augmentation`
+
+## Data and Third-party Resources
+
+- **Data:** Japanese general and dialogue corpora were processed into Hangul-pronunciation/Korean-meaning pairs; full source corpora and final weights are not redistributed. Original corpus names and redistribution rights were not established from the available repository materials.
+- **External services / models:** Papago collection via Selenium and pretrained components used in the early translation experiments are third-party services or models, subject to their own terms.
+
+Dependency lists are in `requirements.txt`; unless versions are explicitly pinned there, they do not reproduce an exact historical software environment. No redistribution permission for third-party inputs is implied by this repository.
