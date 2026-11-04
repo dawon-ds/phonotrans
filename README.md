@@ -2,7 +2,6 @@
 
 **Character-level Seq2Seq with GRU and Attention · 2025**
 
-[Portfolio](https://incredible-march-0ef.notion.site/14d68564df5a82179efc017502741a9b)
 
 PhonoTrans translates **Japanese pronunciation written in Hangul directly into Korean**, without requiring users to type Japanese characters. It replaces an error-prone multi-stage translation pipeline with a character-level Seq2Seq model.
 
