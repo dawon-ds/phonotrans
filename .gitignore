@@ -12,3 +12,5 @@ runs/
 *.tfevents.*
 data/*.csv
 !data/sample.csv
+.env.*
+!.env.example
