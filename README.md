@@ -17,9 +17,9 @@ PhonoTrans translates **Japanese pronunciation written in Hangul directly into K
 - **Framework:** PyTorch
 - **Evaluation:** BLEU
 
-## Data
+## Approach
 
-### Pipeline Redesign
+### Initial Pipeline and Redesign
 
 The original approach translated through multiple intermediate representations:
 
@@ -27,11 +27,15 @@ The original approach translated through multiple intermediate representations:
 
 ![Original system architecture](docs/images/original_architecture.png)
 
-Errors could propagate across stages, motivating a direct Hangul-pronunciation-to-Korean mapping.
+The initial implementation used `g2pk` and `hangul-romanize` for Hangul-to-romanization conversion, a rule-based romanization-to-Hiragana mapper, and pretrained mBART50 (`facebook/mbart-large-50-many-to-many-mmt`) for Japanese-to-Korean translation. These stages introduced opportunities for error propagation, motivating the direct Seq2Seq redesign. The early implementation is preserved in `experiments/initial_pipeline/`.
 
 ![Redesigned system architecture](docs/images/new_architecture.png)
 
-The project combined a general Japanese corpus with dialogue-focused data.
+### Data
+
+The project used **AI Hub's Korean–Japanese cultural-domain parallel corpus**, which contains approximately **1.5 million source sentence pairs** covering cultural and other domains. This is the size of the original source dataset, **not** the number of examples used to train PhonoTrans. The precise subset drawn from AI Hub is not established by the available records.
+
+The recorded working data combined general Japanese sentences with dialogue-focused data:
 
 | Data source | Size |
 | --- | ---: |
@@ -51,13 +55,21 @@ The final presentation setup combined pronunciation noise at **0.3 and 0.7** wit
 
 ![Final augmentation configuration](docs/images/final_model_data.png)
 
-Some recorded runs reached BLEU around **0.56**, but their evaluation settings are incomplete and are not directly comparable. Public utilities cover pronunciation noise and the **0.3 dual-noise** workflow; the full fivefold augmentation recipe is not included.
+| Augmentation | Runs | Best recorded BLEU |
+| --- | ---: | ---: |
+| Noise 0.3 | 4 | **0.5608** |
+| Noise 0.5 | 2 | 0.5468 |
+| Noise 0.7 | 1 | 0.5414 |
+| Noise 1.0 | 3 | 0.5564 |
+| Augmentation ×5 | 2 | 0.5523 |
 
-## Approach
+The table lists the highest recorded score for each setting, **not results from a confirmed controlled comparison**. Training/evaluation settings may differ between runs. The final presentation result, **BLEU 0.5276**, is from the fivefold-augmentation `run_1`, not the highest result in the table.
 
-### Model Architecture
+Public utilities reconstruct the pronunciation-noise and **0.3 dual-noise** workflow; the complete later fivefold augmentation recipe is documented in historical experiment notes but not included in this repository.
 
-The final model is a character-level Seq2Seq architecture with three main components:
+### Final Model Architecture
+
+The final model uses **character-level Seq2Seq with GRU and attention**. This encoder–decoder approach supports different input and output lengths. LSTM and Transformer alternatives were considered during planning but were not the final implemented architecture. Its components are:
 
 1. **Encoder** — character embedding + GRU
 2. **Attention** — computes attention weights over encoder outputs at each decoding step
@@ -67,7 +79,9 @@ Training uses teacher forcing, validation/evaluation uses greedy token selection
 
 ## Results
 
-The final presentation model reported **BLEU 0.5276**. Qualitative inference examples showed correct output for the original pronunciation and partial tolerance to some pronunciation variations, while stronger distortions could still lead to unrelated predictions.
+**Final presentation model:** BLEU **0.5276** · Augmentation ×5 / `run_1`. This historical result is separate from the best BLEU recorded across experimental runs.
+
+**Inference:** Example outputs from the final model are shown below.
 
 ![Final model inference result](docs/images/final_model_result.png)
 
@@ -168,17 +182,19 @@ Interactive inference:
 python src/infer.py
 ```
 
-## Limitations
+## Limitations and Future Work
 
+- Larger pronunciation deviations can distort meaning or produce inaccurate translations. Realistic user-entered transcriptions would provide a stronger robustness evaluation.
+- Experiment settings were not fully documented across runs; augmentation strategies should be compared using consistent training and evaluation conditions.
 - Evaluation reports the **mean of character-level sentence BLEU scores**, using NLTK smoothing method 1. It is not a corpus-level word-tokenized BLEU score.
 - The evaluation script decodes for the reference target's length, whereas interactive inference stops at EOS or 100 generated characters. Their decoding conditions differ.
 - The recovered augmentation utility merges original and augmented rows before splitting train/validation data. Variants of the same source sentence may therefore appear in both sets, which can make validation optimistic. Future experiments should split source examples before augmenting the training set.
 - The full corpus, original final checkpoint, and complete fivefold augmentation recipe are absent, so the reported **0.5276** is a historical project result rather than a score reproduced by this public repository.
-- Strong pronunciation distortions can produce unrelated translations. Evaluation on realistic user transcriptions remains future work.
+- Expanding pronunciation-based translation to languages beyond Japanese remains a future direction, not an implemented feature.
 
 ## Review
 
-This project demonstrates a redesign from a multi-stage translation pipeline to direct sequence-to-sequence modeling. The augmentation experiments also illustrate the challenges of evaluating robustness to imperfect phonetic transcriptions.
+The project reinforced that the quality and variability of pronunciation-based inputs matter alongside model architecture. It also highlighted the importance of designing data for realistic use and evaluating experiments under consistent conditions.
 
 ## Tech Stack
 
@@ -186,7 +202,7 @@ This project demonstrates a redesign from a multi-stage translation pipeline to 
 
 ## Data and Third-party Resources
 
-- **Data:** Japanese general and dialogue corpora were processed into Hangul-pronunciation/Korean-meaning pairs; full source corpora and final weights are not redistributed. Original corpus names and redistribution rights were not established from the available repository materials.
+- **Data:** AI Hub's Korean–Japanese cultural-domain parallel corpus and Japanese general/dialogue data were used to prepare Hangul-pronunciation/Korean-meaning pairs. Full source corpora and final weights are not redistributed; the exact AI Hub subset and redistribution rights have not been established from available records.
 - **External services / models:** Papago collection via Selenium and pretrained components used in the early translation experiments are third-party services or models, subject to their own terms.
 
 Dependency lists are in `requirements.txt`; unless versions are explicitly pinned there, they do not reproduce an exact historical software environment. No redistribution permission for third-party inputs is implied by this repository.
