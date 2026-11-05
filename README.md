@@ -2,7 +2,6 @@
 
 **Character-level Seq2Seq with GRU and Attention · 2025**
 
-
 PhonoTrans translates **Japanese pronunciation written in Hangul directly into Korean**, without requiring users to type Japanese characters. It replaces an error-prone multi-stage translation pipeline with a character-level Seq2Seq model.
 
 **Reported final result:** BLEU **0.5276** (mean character-level sentence BLEU; historical presentation result, not reproduced from the public repository).
@@ -63,7 +62,7 @@ The final presentation setup combined pronunciation noise at **0.3 and 0.7** wit
 | Noise 1.0 | 3 | 0.5564 |
 | Augmentation ×5 | 2 | 0.5523 |
 
-The table lists the highest recorded score for each setting, **not results from a confirmed controlled comparison**. Training/evaluation settings may differ between runs. The final presentation result, **BLEU 0.5276**, is from the fivefold-augmentation `run_1`, not the highest result in the table.
+These are the best recorded scores within each setting, **not a controlled comparison**; training and evaluation conditions may differ across runs.
 
 Public utilities reconstruct the pronunciation-noise and **0.3 dual-noise** workflow; the complete later fivefold augmentation recipe is documented in historical experiment notes but not included in this repository.
 
@@ -150,7 +149,7 @@ python preprocessing/split_dataset.py --input data/final_converted_input_target.
 python preprocessing/augmentation.py --input data/dataset_except_test.csv --prob 0.3 --output-dir data
 ```
 
-The second command assumes the test partition has already been excluded; these scripts do not reproduce the full later fivefold augmentation recipe.
+**Note:** These commands illustrate two historical preprocessing workflows rather than sequential steps to execute on the same dataset. `split_dataset.py` creates an 80/10/10 split, while `augmentation.py` expects a separately prepared dataset with test examples excluded and writes new `train.csv` and `val.csv` files. Running both consecutively can overwrite the initial train/validation split. The scripts do not reproduce the full later fivefold augmentation recipe.
 
 ### Training
 
@@ -160,7 +159,7 @@ Place prepared `train.csv`, `val.csv`, and `test.csv` files under `data/` with t
 input,target
 ```
 
-The settings in `src/config.py` follow the presentation setup: batch size **64** (validation **16**), embedding **128**, hidden size **256**, up to **30 epochs**, learning rate **0.001**, teacher forcing **0.6**, early-stopping patience **5**, and weight decay **0.0001**.
+**Current repository configuration** (`src/config.py`): batch size **64** (validation **16**), embedding **128**, hidden size **256**, up to **30 epochs**, learning rate **0.001**, teacher forcing **0.6**, early-stopping patience **5**, and weight decay **0.0001**. Historical runs used other configurations (for example, `run_3`: batch size 32, embedding 160, hidden size 320, patience 10); these settings should not be assumed to reproduce the reported presentation BLEU.
 
 Training:
 
@@ -185,11 +184,10 @@ python src/infer.py
 ## Limitations and Future Work
 
 - Larger pronunciation deviations can distort meaning or produce inaccurate translations. Realistic user-entered transcriptions would provide a stronger robustness evaluation.
-- Experiment settings were not fully documented across runs; augmentation strategies should be compared using consistent training and evaluation conditions.
 - Evaluation reports the **mean of character-level sentence BLEU scores**, using NLTK smoothing method 1. It is not a corpus-level word-tokenized BLEU score.
 - The evaluation script decodes for the reference target's length, whereas interactive inference stops at EOS or 100 generated characters. Their decoding conditions differ.
 - The recovered augmentation utility merges original and augmented rows before splitting train/validation data. Variants of the same source sentence may therefore appear in both sets, which can make validation optimistic. Future experiments should split source examples before augmenting the training set.
-- The full corpus, original final checkpoint, and complete fivefold augmentation recipe are absent, so the reported **0.5276** is a historical project result rather than a score reproduced by this public repository.
+- The full corpus, original final checkpoint, and complete fivefold augmentation recipe are absent, so the historical presentation score cannot be reproduced from this public repository alone.
 - Expanding pronunciation-based translation to languages beyond Japanese remains a future direction, not an implemented feature.
 
 ## Review
@@ -202,7 +200,7 @@ The project reinforced that the quality and variability of pronunciation-based i
 
 ## Data and Third-party Resources
 
-- **Data:** AI Hub's Korean–Japanese cultural-domain parallel corpus and Japanese general/dialogue data were used to prepare Hangul-pronunciation/Korean-meaning pairs. Full source corpora and final weights are not redistributed; the exact AI Hub subset and redistribution rights have not been established from available records.
+- **Data:** Full source corpora and final weights are not redistributed. Redistribution rights for the underlying datasets have not been established from the available records.
 - **External services / models:** Papago collection via Selenium and pretrained components used in the early translation experiments are third-party services or models, subject to their own terms.
 
 Dependency lists are in `requirements.txt`; unless versions are explicitly pinned there, they do not reproduce an exact historical software environment. No redistribution permission for third-party inputs is implied by this repository.
